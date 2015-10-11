@@ -22,6 +22,7 @@ from nltk.corpus import stopwords
 import itertools
 from nltk.collocations import BigramCollocationFinder
 from nltk.metrics import BigramAssocMeasures
+from nltk.probability import FreqDist, ConditionalFreqDist
 import collections
 import logging
 
@@ -90,7 +91,7 @@ def analyzer(request):
                 'movie_reviews/home.html', RequestContext(request, context))
 
         context['query'] = query
-        stripped_query = query.strip()
+        stripped_query = query.strip().lower()
         urls = []
         
         if test_mode:
@@ -176,14 +177,64 @@ def analyzer(request):
             bigrams = bigram_finder.nbest(score_fn, n)
             return dict([(ngram, True) for ngram in itertools.chain(words, bigrams)])
  
-        #classifier = evaluate_classifier(stopword_filtered_word_features)
-        classifier = train_classifier(bigram_word_features)
+ 
+ 
+        #Eliminate Low Information Features
+        word_fd = FreqDist()
+        label_word_fd = ConditionalFreqDist()
+ 
+        for word in movie_reviews.words(categories=['pos']):
+            word_fd[word.lower()] +=1
+            label_word_fd['pos'][word.lower()] +=1
+ 
+        for word in movie_reviews.words(categories=['neg']):
+            word_fd[word.lower()] +=1
+            label_word_fd['neg'][word.lower()] +=1
+ 
+        # n_ii = label_word_fd[label][word]
+        # n_ix = word_fd[word]
+        # n_xi = label_word_fd[label].N()
+        # n_xx = label_word_fd.N()
+ 
+        pos_word_count = label_word_fd['pos'].N()
+        neg_word_count = label_word_fd['neg'].N()
+        total_word_count = pos_word_count + neg_word_count
+ 
+        word_scores = {}
+ 
+        for word, freq in word_fd.iteritems():
+            pos_score = BigramAssocMeasures.chi_sq(label_word_fd['pos'][word],
+                (freq, pos_word_count), total_word_count)
+            neg_score = BigramAssocMeasures.chi_sq(label_word_fd['neg'][word],
+                (freq, neg_word_count), total_word_count)
+            word_scores[word] = pos_score + neg_score
+ 
+        best = sorted(word_scores.iteritems(), key=lambda (w,s): s, reverse=True)[:10000]
+        bestwords = set([w for w, s in best])
+ 
+ 
+        def best_word_features(words):
+            return dict([(word, True) for word in words if word in bestwords])
         
+        def best_bigram_word_features(words, score_fn=BigramAssocMeasures.chi_sq, n=200):
+            bigram_finder = BigramCollocationFinder.from_words(words)
+            bigrams = bigram_finder.nbest(score_fn, n)
+            d = dict([(bigram, True) for bigram in bigrams])
+            d.update(best_word_feats(words))
+            return d
+ 
+        
+ 
+        #classifier = evaluate_classifier(stopword_filtered_word_features)
+        #classifier = train_classifier(bigram_word_features)
+        classifier = train_classifier(best_word_features)
+        
+
         cntpos = 0
         cntneg = 0
         for p in pages:
             words = p.content.split(" ")
-            feats = bigram_word_features(words)#stopword_filtered_word_feats(words)
+            feats = best_word_features(words)#bigram_word_features(words)#stopword_filtered_word_feats(words)
             #print feats
             str_sent = classifier.classify(feats)
             if str_sent == 'pos':

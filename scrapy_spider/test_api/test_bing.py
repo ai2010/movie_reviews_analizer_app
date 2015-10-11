@@ -22,12 +22,16 @@ def bing_api(query, source_type = "Web", top = 10, format = 'json'):
     keyBing = API_KEY        # get Bing key from: https://datamarket.azure.com/account/keys
     credentialBing = 'Basic ' + (':%s' % keyBing).encode('base64')[:-1] # the "-1" is to remove the trailing "\n" which encode adds
     searchString = '%27X'+query.replace(" ",'+')+'movie+review%27'
+    #max allowed is 50
     top = 50
     offset = 0
 
     url = 'https://api.datamarket.azure.com/Bing/Search/Web?' + \
           'Query=%s&$top=%d&$skip=%d&$format=json' % (searchString, top, offset)
 
+    #url = 'https://api.datamarket.azure.com/Bing/Search/Web?' + \
+    #      'Query=%s&$format=json' % (searchString)
+    
     request = urllib2.Request(url)
     request.add_header('Authorization', credentialBing)
     requestOpener = urllib2.build_opener()
@@ -47,5 +51,7 @@ def parse_bing_results():
     print reviews_urls
     
     
-print bing_api('out of the dark')
+results =  bing_api('vacation')
+print results
+print len(results['d']['results'])
 #parse_bing_results()

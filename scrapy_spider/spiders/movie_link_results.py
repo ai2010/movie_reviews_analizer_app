@@ -53,7 +53,7 @@ class Search(Spider):
         ## Get meta info from website
         title = sel.xpath('//title/text()').extract()
         if len(title)>0:
-            title = title[0].encode('utf-8').strip()
+            title = title[0].encode('utf-8').strip().lower()
 
         content = 'none'
 
@@ -95,7 +95,7 @@ class Search(Spider):
         elif len(crop_emptyel(sel.xpath('/html/head/meta[@name="description"]/@content').extract()))>0:
             contents = crop_emptyel(sel.xpath('/html/head/meta[@name="description"]/@content').extract())
             
-        content = ' '.join([c.encode('utf-8') for c in contents]).strip()
+        content = ' '.join([c.encode('utf-8') for c in contents]).strip().lower()
         print 'title:',title
         print 'content:',content
                 
