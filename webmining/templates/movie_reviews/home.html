@@ -1,0 +1,63 @@
+{% extends "movie_reviews/base.html" %}
+<!--
+{% load url from future %}
+-->
+{% block content %}
+    {% if not classified_information %}
+        <form action="" method="POST">
+            {% csrf_token %}
+            <!-- Main hero unit for a primary marketing message or call to action -->
+            <h2 align = Center>Movie Search on Bing </h2>
+            <p> <br><br></p>
+            <p align = Center><input type="search" class="span3" placeholder="Search / @movie" name="query" id="search" autofocus /> </p>
+            <p align = Center><button type="submit" class="btn btn-primary btn-large pull-right">Search &raquo;</button></p>
+        </form>  
+    {% else %}
+        <h2 align = Center>Movie Sentiment Analysis</h2>
+        <div class="row">
+        <p align = Center><strong>Reviews Classified : {{ reviews_classified }}</strong></p>
+        <p align = Center><strong>Positive Reviews : {{ positive_count }}</strong></p>
+        <p align = Center><strong> Negative Reviews : {{ negative_count }}</strong></p>
+        </div> 
+	<section>
+	    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+	    <script type="text/javascript">
+	      google.load("visualization", "1", {packages:["corechart"]});
+	      google.setOnLoadCallback(drawChart);
+	      function drawChart() {
+
+	        var data = google.visualization.arrayToDataTable([
+	          ['Sentiment', 'Number'],
+	          ['Positive',     {{ positive_count }}],
+	          ['Negative',      {{ negative_count }}]
+	        ]);
+
+	        var options = {
+	          title: 'Sentiment Pie Chart'
+	        };
+
+	        var chart = new google.visualization.PieChart(document.getElementById('piechart'));
+
+	        chart.draw(data, options);
+	      }
+	    </script>
+		  <div class="row">
+		    <p id="piechart" style="width: 900px; height: 500px;margin-left: 300px;" align = Center></p>
+		  </div>
+	</section>
+
+
+		
+	<section>
+        <div class="row">
+<p align = Center><a href="{% url 'pgrank_view' searchterm_id  %}?scrape=False", align = Center >calculate page rank </a></p>
+	 <!--
+		<a href="/pg-rank/{{ searchterm_id }}">calculate page rank </a>
+	-->
+		<p align = Center><a href="{% url 'pgrank_view' searchterm_id %}", align = Center >scrape and calculate page rank (may take a long time) </a></p>
+	</div>
+	</section>
+
+    {% endif %} 
+
+{% endblock content %}
